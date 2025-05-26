@@ -1,6 +1,7 @@
 package com.swifttech.frameworkgenerator.service;
 
 import com.swifttech.frameworkgenerator.model.Module;
+import com.swifttech.frameworkgenerator.payload.GenerateModulesRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -21,13 +22,13 @@ public class MultiModuleProjectService {
         this.projectGeneratorService = projectGeneratorService;
     }
 
-    public void generateMultiModuleProject(String groupId, String version, List<Module> modules, Path outputDir) throws IOException {
-        Path parentDir = Files.createDirectories(outputDir.resolve("parent-project"));
-        createParentPom(parentDir, groupId, version, modules);
+    public void generateMultiModuleProject(List<Module> modules, GenerateModulesRequest request, Path outputDir) throws IOException {
+        Path parentDir = Files.createDirectories(outputDir.resolve(request.getParentProjectName()));
+        createParentPom(parentDir, request.getParentGroupId(), request.getParentVersion(), modules);
 
         for (Module module : modules) {
             Path moduleDir = Files.createDirectories(parentDir.resolve(module.getName()));
-            byte[] moduleZip = projectGeneratorService.generateModule(groupId, module.getName(), String.join(",", module.getDependencies()));
+            byte[] moduleZip = projectGeneratorService.generateModule(request.getParentGroupId(), module.getName(), String.join(",", module.getDependencies()));
             unzip(moduleZip, moduleDir);
         }
     }

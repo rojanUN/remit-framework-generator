@@ -1,13 +1,13 @@
-package com.swifttech.frameworkgenerator;
+package com.swifttech.user_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FrameworkgeneratorApplication {
+public class DemoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(FrameworkgeneratorApplication.class, args);
+		SpringApplication.run(DemoApplication.class, args);
 	}
 
 }
