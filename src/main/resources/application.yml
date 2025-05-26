@@ -1,6 +1,11 @@
 spring:
   application:
     name: FRAMEWORK-GENERATOR
+
+app:
+  rest:
+    base-url: http://localhost:8080
+
 project:
   groupId: com.example
   version: 1.0.0

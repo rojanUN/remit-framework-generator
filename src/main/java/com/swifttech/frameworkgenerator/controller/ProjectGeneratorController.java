@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/generate")
+@RequestMapping("/web/generate")
 public class ProjectGeneratorController {
 
     private final MultiModuleProjectService projectService;

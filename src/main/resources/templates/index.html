@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/base :: head}"></head>
+<body>
+    <div th:replace="~{layout/base :: nav}"></div>
+
+    <div class="container mt-4">
+        <h2>Generate Multi-Module Project</h2>
+        <form th:action="@{/generate}" th:object="${generateRequest}" method="post" class="mt-4">
+            <div class="mb-3">
+                <label for="parentProjectName" class="form-label">Parent Project Name</label>
+                <input type="text" class="form-control" id="parentProjectName" th:field="*{parentProjectName}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="parentGroupId" class="form-label">Parent Group ID</label>
+                <input type="text" class="form-control" id="parentGroupId" th:field="*{parentGroupId}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="parentVersion" class="form-label">Parent Version</label>
+                <input type="text" class="form-control" id="parentVersion" th:field="*{parentVersion}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="outputDirectory" class="form-label">Output Directory</label>
+                <input type="text" class="form-control" id="outputDirectory" th:field="*{outputDirectory}" required>
+            </div>
+
+            <div class="mb-3">
+                <h4>Modules</h4>
+                <div th:each="module, stat : *{request}" class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Module <span th:text="${stat.count}"></span></h5>
+                        <div class="mb-3">
+                            <label th:for="${'moduleName' + stat.index}" class="form-label">Module Name</label>
+                            <input type="text" class="form-control" th:id="${'moduleName' + stat.index}" 
+                                   th:field="*{request[__${stat.index}__].moduleName}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label th:for="${'dependencies' + stat.index}" class="form-label">Dependencies (comma-separated)</label>
+                            <input type="text" class="form-control" th:id="${'dependencies' + stat.index}" 
+                                   th:field="*{request[__${stat.index}__].dependencies}" 
+                                   placeholder="web,data-jpa,security">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addModule()">Add Module</button>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Generate Project</button>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        function addModule() {
+            const modulesContainer = document.querySelector('.mb-3:has(h4)');
+            const moduleCount = document.querySelectorAll('.card').length;
+            
+            const newModule = document.createElement('div');
+            newModule.className = 'card mb-3';
+            newModule.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title">Module ${moduleCount + 1}</h5>
+                    <div class="mb-3">
+                        <label for="moduleName${moduleCount}" class="form-label">Module Name</label>
+                        <input type="text" class="form-control" id="moduleName${moduleCount}" 
+                               name="request[${moduleCount}].moduleName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dependencies${moduleCount}" class="form-label">Dependencies (comma-separated)</label>
+                        <input type="text" class="form-control" id="dependencies${moduleCount}" 
+                               name="request[${moduleCount}].dependencies" 
+                               placeholder="web,data-jpa,security">
+                    </div>
+                </div>
+            `;
+            
+            modulesContainer.insertBefore(newModule, modulesContainer.lastElementChild);
+        }
+    </script>
+</body>
+</html> 
