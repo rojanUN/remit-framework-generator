@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: FRAMEWORK-GENERATOR
+project:
+  groupId: com.example
+  version: 1.0.0
+  modules:
+    - name: module-a
+      dependencies:
+        - web
+        - thymeleaf
+    - name: module-b
+      dependencies:
+        - data-jpa
+        - mysql
