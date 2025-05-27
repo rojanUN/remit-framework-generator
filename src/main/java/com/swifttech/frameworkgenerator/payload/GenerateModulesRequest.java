@@ -1,9 +1,9 @@
 package com.swifttech.frameworkgenerator.payload;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,4 +18,5 @@ public class GenerateModulesRequest {
     private String parentVersion;
     private String outputDirectory;
     private String parentProjectName;
+    private String javaVersion;
 }

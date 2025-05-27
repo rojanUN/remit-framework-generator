@@ -1,5 +1,6 @@
 package com.swifttech.frameworkgenerator.service;
 
+import com.swifttech.frameworkgenerator.model.GenerateRequest;
 import com.swifttech.frameworkgenerator.model.Module;
 import com.swifttech.frameworkgenerator.payload.GenerateModulesRequest;
 import org.springframework.stereotype.Service;
@@ -23,14 +24,15 @@ public class MultiModuleProjectService {
     }
 
     public void generateMultiModuleProject(List<Module> modules, GenerateModulesRequest request, Path outputDir) throws IOException {
-        Path parentDir = Files.createDirectories(outputDir.resolve(request.getParentProjectName()));
-        createParentPom(parentDir, request.getParentGroupId(), request.getParentVersion(), modules);
-
-        for (Module module : modules) {
-            Path moduleDir = Files.createDirectories(parentDir.resolve(module.getName()));
-            byte[] moduleZip = projectGeneratorService.generateModule(request.getParentGroupId(), module.getName(), String.join(",", module.getDependencies()));
-            unzip(moduleZip, moduleDir);
-        }
+        GenerateRequest generateRequest = new GenerateRequest();
+        generateRequest.setParentProjectName(request.getParentProjectName());
+        generateRequest.setParentGroupId(request.getParentGroupId());
+        generateRequest.setParentVersion(request.getParentVersion());
+        generateRequest.setOutputDirectory(request.getOutputDirectory());
+        generateRequest.setJavaVersion(request.getJavaVersion());
+        generateRequest.setRequest(modules);
+        
+        projectGeneratorService.generateProject(generateRequest);
     }
 
     private void createParentPom(Path parentDir, String groupId, String version, List<Module> modules) throws IOException {

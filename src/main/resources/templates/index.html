@@ -1,120 +1,351 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout/base :: head}"></head>
+<head>
+    <meta charset="UTF-8">
+    <title>Framework Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+    <style>
+        .dependency-card {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dependency-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .dependency-card.selected {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .dependency-description {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .module-dependencies {
+            min-height: 100px;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .selected-dependency {
+            display: inline-block;
+            background-color: #e9ecef;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .selected-dependency .remove-dependency {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            color: #dc3545;
+        }
+    </style>
+</head>
 <body>
     <div th:replace="~{layout/base :: nav}"></div>
 
-    <div class="container mt-4">
-        <h2>Generate Multi-Module Project</h2>
-        <form th:action="@{/generate}" th:object="${generateRequest}" method="post" class="mt-4">
+    <div class="container mt-5">
+        <h1 class="mb-4">Framework Generator</h1>
+        <form th:action="@{/generate}" method="post" th:object="${generateRequest}">
             <div class="mb-3">
                 <label for="parentProjectName" class="form-label">Parent Project Name</label>
                 <input type="text" class="form-control" id="parentProjectName" th:field="*{parentProjectName}" required>
             </div>
-
             <div class="mb-3">
                 <label for="parentGroupId" class="form-label">Parent Group ID</label>
                 <input type="text" class="form-control" id="parentGroupId" th:field="*{parentGroupId}" required>
             </div>
-
             <div class="mb-3">
                 <label for="parentVersion" class="form-label">Parent Version</label>
                 <input type="text" class="form-control" id="parentVersion" th:field="*{parentVersion}" required>
             </div>
-
+            <div class="mb-3">
+                <label for="javaVersion" class="form-label">Java Version</label>
+                <select class="form-select" id="javaVersion" th:field="*{javaVersion}" required>
+                    <option value="">Select Java Version...</option>
+                </select>
+            </div>
             <div class="mb-3">
                 <label for="outputDirectory" class="form-label">Output Directory</label>
                 <input type="text" class="form-control" id="outputDirectory" th:field="*{outputDirectory}" required>
             </div>
 
-            <div class="mb-3">
-                <h4>Modules</h4>
-                <div th:each="module, stat : *{request}" class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Module <span th:text="${stat.count}"></span></h5>
-                            <button type="button" class="btn btn-danger btn-sm" th:onclick="'removeModule(this)'" 
-                                    th:disabled="${stat.first}">Remove Module</button>
+            <div id="modules-container">
+                <div th:each="module, stat : *{request}" class="module-container mb-4 p-3 border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Module <span th:text="${stat.count}"></span></h4>
+                        <button type="button" class="btn btn-danger btn-sm remove-module" th:if="${stat.count > 1}">Remove Module</button>
+                    </div>
+                    <div class="mb-3">
+                        <label th:for="'moduleName' + ${stat.index}" class="form-label">Module Name</label>
+                        <input type="text" class="form-control" th:id="'moduleName' + ${stat.index}" 
+                               th:field="*{request[__${stat.index}__].moduleName}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Dependencies</label>
+                        <div class="module-dependencies" th:attr="data-module-index=${stat.index}">
+                            <!-- Selected dependencies will be displayed here -->
                         </div>
-                        <div class="mb-3">
-                            <label th:for="${'moduleName' + stat.index}" class="form-label">Module Name</label>
-                            <input type="text" class="form-control" th:id="${'moduleName' + stat.index}" 
-                                   th:field="*{request[__${stat.index}__].moduleName}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label th:for="${'dependencies' + stat.index}" class="form-label">Dependencies (comma-separated)</label>
-                            <input type="text" class="form-control" th:id="${'dependencies' + stat.index}" 
-                                   th:field="*{request[__${stat.index}__].dependencies}" 
-                                   placeholder="web,data-jpa,security">
-                        </div>
+                        <input type="hidden" th:field="*{request[__${stat.index}__].dependencies}" class="module-dependencies-input">
+                    </div>
+
+                    <div class="dependency-selector mb-3">
+                        <select class="form-select dependency-search" th:attr="data-module-index=${stat.index}">
+                            <option value="">Search dependencies...</option>
+                        </select>
                     </div>
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="addModule()">Add Module</button>
             </div>
 
-            <button type="submit" class="btn btn-primary">Generate Project</button>
+            <button type="button" class="btn btn-secondary mb-3" id="add-module">Add Module</button>
+            <button type="submit" class="btn btn-primary mb-3">Generate Project</button>
         </form>
     </div>
 
-    <script th:inline="javascript">
-        function addModule() {
-            const modulesContainer = document.querySelector('.mb-3:has(h4)');
-            const moduleCount = document.querySelectorAll('.card').length;
-            
-            const newModule = document.createElement('div');
-            newModule.className = 'card mb-3';
-            newModule.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Module ${moduleCount + 1}</h5>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="removeModule(this)">Remove Module</button>
-                    </div>
-                    <div class="mb-3">
-                        <label for="moduleName${moduleCount}" class="form-label">Module Name</label>
-                        <input type="text" class="form-control" id="moduleName${moduleCount}" 
-                               name="request[${moduleCount}].moduleName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="dependencies${moduleCount}" class="form-label">Dependencies (comma-separated)</label>
-                        <input type="text" class="form-control" id="dependencies${moduleCount}" 
-                               name="request[${moduleCount}].dependencies" 
-                               placeholder="web,data-jpa,security">
-                    </div>
-                </div>
-            `;
-            
-            modulesContainer.insertBefore(newModule, modulesContainer.lastElementChild);
-        }
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let dependencies = {};
+            let moduleDependencies = {};
+            let select2Data = []; // Cache for Select2 data
 
-        function removeModule(button) {
-            const moduleCard = button.closest('.card');
-            const modulesContainer = document.querySelector('.mb-3:has(h4)');
-            const remainingModules = document.querySelectorAll('.card');
-            
-            // Don't remove if it's the last module
-            if (remainingModules.length <= 1) {
-                return;
+            // Fetch Java versions on page load
+            $.get('/api/java-versions')
+                .done(function(versions) {
+                    console.log('Received Java versions:', versions);
+                    const javaVersionSelect = $('#javaVersion');
+                    versions.forEach(version => {
+                        javaVersionSelect.append(new Option(version.name, version.id));
+                    });
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error('Failed to fetch Java versions:', textStatus, errorThrown);
+                    alert('Failed to load Java versions. Please refresh the page.');
+                });
+
+            // Common Select2 configuration
+            const select2Config = {
+                theme: 'bootstrap-5',
+                placeholder: 'Search dependencies...',
+                allowClear: true,
+                matcher: function(params, data) {
+                    // If there are no search terms, return all of the data
+                    if (!params.term || params.term.trim() === '') {
+                        return data;
+                    }
+
+                    // Do not display the item if there is no 'text' property
+                    if (!data.text) {
+                        return null;
+                    }
+
+                    const searchStr = (data.text + ' ' + 
+                                    (data.description || '') + ' ' + 
+                                    data.category).toLowerCase();
+                    const searchTerm = params.term.toLowerCase();
+                    
+                    // Simple contains check for now
+                    return searchStr.includes(searchTerm) ? data : null;
+                },
+                templateResult: function(data) {
+                    if (!data.id) return data.text;
+                    
+                    const $container = $(`
+                        <div class="dependency-option">
+                            <div class="fw-bold">${data.text}</div>
+                            <div class="dependency-description">${data.description || ''}</div>
+                            <div class="dependency-category text-muted small">${data.category}</div>
+                        </div>
+                    `);
+                    
+                    // Highlight the search term if it exists
+                    if (data.text && this.term) {
+                        const regex = new RegExp(this.term, 'gi');
+                        $container.find('.fw-bold').html(
+                            data.text.replace(regex, match => `<mark>${match}</mark>`)
+                        );
+                    }
+                    
+                    return $container;
+                },
+                templateSelection: function(data) {
+                    return data.text || data.id;
+                }
+            };
+
+            // Fetch dependencies once on page load
+            $.get('/api/dependencies')
+                .done(function(data) {
+                    console.log('Received dependencies:', JSON.stringify(data, null, 2));
+                    dependencies = data;
+                    if (Object.keys(dependencies).length === 0) {
+                        console.error('No dependencies received from server');
+                        alert('Failed to load dependencies. Please refresh the page.');
+                        return;
+                    }
+                    
+                    // Prepare the data for Select2 once
+                    select2Data = [];
+                    Object.entries(dependencies).forEach(([category, deps]) => {
+                        deps.forEach(dep => {
+                            if (dep.id && dep.name) {
+                                select2Data.push({
+                                    id: dep.id,
+                                    text: dep.name,
+                                    description: dep.description || '',
+                                    category: category
+                                });
+                            }
+                        });
+                    });
+                    
+                    console.log(`Prepared ${select2Data.length} dependencies for Select2`);
+                    
+                    // Initialize existing selectors
+                    initializeDependencySelectors();
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error('Failed to fetch dependencies:', textStatus, errorThrown);
+                    alert('Failed to load dependencies. Please refresh the page.');
+                });
+
+            function initializeDependencySelectors() {
+                console.log('Initializing dependency selectors');
+                $('.dependency-search').each(function() {
+                    const moduleIndex = $(this).data('module-index');
+                    moduleDependencies[moduleIndex] = new Set();
+
+                    console.log(`Initializing selector for module ${moduleIndex}`);
+
+                    $(this).select2({
+                        ...select2Config,
+                        data: select2Data
+                    }).on('select2:select', function(e) {
+                        const moduleIndex = $(this).data('module-index');
+                        const dependency = e.params.data;
+                        console.log(`Selected dependency for module ${moduleIndex}:`, dependency);
+                        
+                        if (!moduleDependencies[moduleIndex].has(dependency.id)) {
+                            moduleDependencies[moduleIndex].add(dependency.id);
+                            updateModuleDependencies(moduleIndex);
+                        }
+                        
+                        $(this).val(null).trigger('change');
+                    });
+                });
             }
-            
-            moduleCard.remove();
-            
-            // Update module numbers
-            const moduleCards = document.querySelectorAll('.card');
-            moduleCards.forEach((card, index) => {
-                const title = card.querySelector('.card-title');
-                title.innerHTML = `Module ${index + 1}`;
+
+            function updateModuleDependencies(moduleIndex) {
+                const container = $(`.module-dependencies[data-module-index="${moduleIndex}"]`);
+                const input = $(`.module-dependencies-input[data-module-index="${moduleIndex}"]`);
+                container.empty();
+
+                const selectedDeps = Array.from(moduleDependencies[moduleIndex]);
+                input.val(selectedDeps.join(','));
+
+                selectedDeps.forEach(depId => {
+                    const dep = findDependencyById(depId);
+                    if (dep) {
+                        container.append(`
+                            <span class="selected-dependency">
+                                ${dep.name}
+                                <span class="remove-dependency" data-dep-id="${depId}">&times;</span>
+                            </span>
+                        `);
+                    }
+                });
+
+                // Add click handler for remove buttons
+                container.find('.remove-dependency').click(function() {
+                    const depId = $(this).data('dep-id');
+                    moduleDependencies[moduleIndex].delete(depId);
+                    updateModuleDependencies(moduleIndex);
+                });
+            }
+
+            function findDependencyById(id) {
+                for (const category in dependencies) {
+                    const dep = dependencies[category].find(d => d.id === id);
+                    if (dep) return dep;
+                }
+                return null;
+            }
+
+            // Add new module
+            $('#add-module').click(function() {
+                const moduleCount = $('.module-container').length;
+                const newModuleHtml = `
+                    <div class="module-container mb-4 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Module ${moduleCount + 1}</h4>
+                            <button type="button" class="btn btn-danger btn-sm remove-module">Remove Module</button>
+                        </div>
+                        <div class="mb-3">
+                            <label for="moduleName${moduleCount}" class="form-label">Module Name</label>
+                            <input type="text" class="form-control" id="moduleName${moduleCount}" 
+                                   name="request[${moduleCount}].moduleName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dependencies</label>
+                            <div class="module-dependencies" data-module-index="${moduleCount}">
+                            </div>
+                            <input type="hidden" name="request[${moduleCount}].dependencies" 
+                                   class="module-dependencies-input" data-module-index="${moduleCount}">
+                        </div>
+                        <div class="dependency-selector mb-3">
+                            <select class="form-select dependency-search" data-module-index="${moduleCount}">
+                                <option value="">Search dependencies...</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                $('#modules-container').append(newModuleHtml);
                 
-                // Update input names and IDs
-                const nameInput = card.querySelector('input[id^="moduleName"]');
-                const depsInput = card.querySelector('input[id^="dependencies"]');
+                // Initialize only the new module's selector
+                const newSelector = $(`.dependency-search[data-module-index="${moduleCount}"]`);
+                moduleDependencies[moduleCount] = new Set();
                 
-                nameInput.id = `moduleName${index}`;
-                nameInput.name = `request[${index}].moduleName`;
-                
-                depsInput.id = `dependencies${index}`;
-                depsInput.name = `request[${index}].dependencies`;
+                newSelector.select2({
+                    ...select2Config,
+                    data: select2Data
+                }).on('select2:select', function(e) {
+                    const moduleIndex = $(this).data('module-index');
+                    const dependency = e.params.data;
+                    
+                    if (!moduleDependencies[moduleIndex].has(dependency.id)) {
+                        moduleDependencies[moduleIndex].add(dependency.id);
+                        updateModuleDependencies(moduleIndex);
+                    }
+                    
+                    $(this).val(null).trigger('change');
+                });
             });
-        }
+
+            // Remove module
+            $(document).on('click', '.remove-module', function() {
+                const moduleIndex = $(this).closest('.module-container').index();
+                $(this).closest('.module-container').remove();
+                delete moduleDependencies[moduleIndex];
+                
+                // Update module numbers
+                $('.module-container').each(function(index) {
+                    $(this).find('h4').text(`Module ${index + 1}`);
+                    $(this).find('input, select').each(function() {
+                        const name = $(this).attr('name');
+                        if (name) {
+                            $(this).attr('name', name.replace(/\[\d+\]/, `[${index}]`));
+                        }
+                    });
+                });
+            });
+        });
     </script>
 </body>
 </html> 
