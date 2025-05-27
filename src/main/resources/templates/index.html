@@ -31,7 +31,11 @@
                 <h4>Modules</h4>
                 <div th:each="module, stat : *{request}" class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title">Module <span th:text="${stat.count}"></span></h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Module <span th:text="${stat.count}"></span></h5>
+                            <button type="button" class="btn btn-danger btn-sm" th:onclick="'removeModule(this)'" 
+                                    th:disabled="${stat.first}">Remove Module</button>
+                        </div>
                         <div class="mb-3">
                             <label th:for="${'moduleName' + stat.index}" class="form-label">Module Name</label>
                             <input type="text" class="form-control" th:id="${'moduleName' + stat.index}" 
@@ -61,7 +65,10 @@
             newModule.className = 'card mb-3';
             newModule.innerHTML = `
                 <div class="card-body">
-                    <h5 class="card-title">Module ${moduleCount + 1}</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Module ${moduleCount + 1}</h5>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeModule(this)">Remove Module</button>
+                    </div>
                     <div class="mb-3">
                         <label for="moduleName${moduleCount}" class="form-label">Module Name</label>
                         <input type="text" class="form-control" id="moduleName${moduleCount}" 
@@ -77,6 +84,36 @@
             `;
             
             modulesContainer.insertBefore(newModule, modulesContainer.lastElementChild);
+        }
+
+        function removeModule(button) {
+            const moduleCard = button.closest('.card');
+            const modulesContainer = document.querySelector('.mb-3:has(h4)');
+            const remainingModules = document.querySelectorAll('.card');
+            
+            // Don't remove if it's the last module
+            if (remainingModules.length <= 1) {
+                return;
+            }
+            
+            moduleCard.remove();
+            
+            // Update module numbers
+            const moduleCards = document.querySelectorAll('.card');
+            moduleCards.forEach((card, index) => {
+                const title = card.querySelector('.card-title');
+                title.innerHTML = `Module ${index + 1}`;
+                
+                // Update input names and IDs
+                const nameInput = card.querySelector('input[id^="moduleName"]');
+                const depsInput = card.querySelector('input[id^="dependencies"]');
+                
+                nameInput.id = `moduleName${index}`;
+                nameInput.name = `request[${index}].moduleName`;
+                
+                depsInput.id = `dependencies${index}`;
+                depsInput.name = `request[${index}].dependencies`;
+            });
         }
     </script>
 </body>
